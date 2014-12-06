@@ -4,17 +4,31 @@ public class Main
 {
 	public static void main(String[] args)
 	{
-		System.out.println("Hello World!");
-
+		Kws a = new Kws();
+		Kws b = new Kws();
+		
 		Scanner input = new Scanner(System.in);
-
-		System.out.print("Enter a number: ");
-		double number1 = input.nextDouble();
-
-		System.out.print("Enter second number: ");
-		double number2 = input.nextDouble();
-
-		double product = number1 * number2;
-		System.out.printf("The product of both numbers is: %f", product);
+		while(true)
+		{
+			System.out.print("Enter a Event: ");
+			String s = input.next();
+			System.out.println();
+			
+			Kws.MSFEvent evt = Kws.MSFEvent.MesNull;
+			
+			switch(s)
+			{
+				case "setupreq": evt = Kws.MSFEvent.MesSetupReq;break;
+				case "releasereq":evt=Kws.MSFEvent.MesReleaseReq;break;
+				
+				default:
+					System.out.printf("unknown event %s\n",s);
+				break;
+			}
+			if (evt != Kws.MSFEvent.MesNull)
+			{
+  	  	a.OnMessage(b,evt);
+			}
+		}
 	}
 }
