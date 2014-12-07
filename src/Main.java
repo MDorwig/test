@@ -1,15 +1,51 @@
 import java.util.*;
 
+class Timer extends Thread
+{
+	@Override
+	public void run()
+	{
+		// TODO Auto-generated method stub
+		while(true)
+		{
+			try
+			{
+				synchronized(this)
+				{
+					wait(10);
+					for(FSM e : Main.members)
+					{
+						e.OnTimer();
+					}
+				}
+			} 
+			catch (InterruptedException e1)
+			{
+				e1.printStackTrace();
+			}
+		}
+	}
+}
+
 public class Main
 {
-	static MsgQueue msgqueue;	
+	//static MsgQueue msgqueue;	
+	static List<FSM> members; 
+	
 	public static void main(String[] args)
 	{
-		Kws a = new Kws("a");
-		Kws b = new Kws("b");
+		members = new ArrayList<FSM>();
+		
+		FSM a = new FSM("a");
+		FSM b = new FSM("b");
+		Timer tmr = new Timer();
+		members.add(a);
+		members.add(b);
+		
 		
 	 	a.start();
 		b.start();
+		tmr.start();
 		
 		Scanner input = new Scanner(System.in);
 		boolean ex = false ;
@@ -30,7 +66,7 @@ public class Main
 				break;
 				
 				case "disp":
-						a.SendMessage(b,Kws.MSFEvent.MesDisplReq);
+						a.SendMessage(b,FSM.Event.EVT_DISPLREQ);
 				break ;
 				
 				case "exit":

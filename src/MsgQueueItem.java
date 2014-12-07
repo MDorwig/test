@@ -1,8 +1,8 @@
 public class MsgQueueItem
 {
-		Kws.MSFEvent evt;
-		Kws orig;
-		MsgQueueItem(Kws sender,Kws.MSFEvent evt)
+		FSM.Event evt;
+		FSM orig;
+		MsgQueueItem(FSM sender,FSM.Event evt)
 		{
 				this.orig = sender;
 				this.evt = evt;

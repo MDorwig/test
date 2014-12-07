@@ -1,19 +1,17 @@
 
 
-public class Kws extends Thread
+public class FSM extends Thread
 {
 		MsgQueue msgq;
-		public enum MSFEvent {
-				MesNull(0),
-				MesSetupReq(0x2180),
-				MesReleaseReq(0x2181),
-				MesReleaseCfm(0x2184),
-				MesSetupInd(0x2182),
-				MesSetupCfm(0x2183),
-				MesDisplReq(0x2160);
-				
-				final int value;
-				MSFEvent(int v) { value = v;}
+		
+		public enum Event {
+				EVT_NULL,
+				EVT_SETUPREQ,
+				EVT_RELEASEREQ,
+				EVT_RELEASECFM,
+				EVT_SETUPIND,
+				EVT_SETUPCFM,
+				EVT_DISPLREQ
 		}
 		
 		enum State {
@@ -25,11 +23,11 @@ public class Kws extends Thread
 				SETUPIND,
 				}
 				
-		MSFEvent evt;
+		Event evt;
 		State [] state = { State.IDLE, State.IDLE, State.IDLE};
 		int sp;
 		String name;
-		Kws(String n){
+		FSM(String n){
 				msgq = new MsgQueue();
 				name = n ;
 				SetState(State.IDLE);
@@ -84,13 +82,13 @@ public class Kws extends Thread
 				return st;
 		}
 		
-		void OnMesSetupReq(Kws peer)
+		void OnMesSetupReq(FSM peer)
 		{
 				switch(GetState())
 				{
 						case IDLE:
 								SetState(State.CONNECTED);
-								SendMessage(peer,MSFEvent.MesSetupCfm);
+								SendMessage(peer,Event.EVT_SETUPCFM);
 						break;
 						
 						case SETUPREQ:
@@ -104,38 +102,40 @@ public class Kws extends Thread
 				}
 		}
 		
-		void SendMessage(Kws peer,MSFEvent evt)
+		void SendMessage(FSM peer,Event evt)
 		{
 				MsgQueueItem i = new MsgQueueItem(this,evt);
 				Trace("SendMessage %s to %s\n",evt.toString(),peer.name);
 				peer.msgq.Post(i);
 		}
 		
-		void OnReleaseReq(Kws peer)
+		void OnReleaseReq(FSM peer)
 		{
 				switch(GetState())
 				{
 						case IDLE:
-								Trace("Invalid State %s\n",GetState().toString());
-						break;
-						
-						case SETUPREQ:
-								SetState(State.IDLE);
-						break;
-						
-						case CONNECTED:
-								SetState(State.IDLE);	
-						  	SendMessage(peer,MSFEvent.MesReleaseCfm);
 						break;
 						
 						case DISPLAY:
+							if (PopState() == State.CONNECTED)
+							{
+								SetState(State.IDLE);	
+								SendMessage(peer,Event.EVT_RELEASECFM);
+							}
+						break ;
+						
 						case RELEASEREQ:
 						case SETUPIND:
-						break ;
+						case SETUPREQ:
+						case CONNECTED:
+								SetState(State.IDLE);	
+						  	SendMessage(peer,Event.EVT_RELEASECFM);
+						break;
+						
 				}
 		}
 		
-		void OnSetupCfm(Kws peer)
+		void OnSetupCfm(FSM peer)
 		{
 				switch(GetState())
 				{
@@ -177,11 +177,6 @@ public class Kws extends Thread
 						break;
 						
 						case DISPLAY:
-							switch(PopState())
-							{
-								default:
-								break ;
-							}
 						break ;
 						
 						case IDLE:
@@ -197,60 +192,68 @@ public class Kws extends Thread
 			
 		}
 		
-		void OnMessage(Kws peer,MSFEvent evt)
+		void OnMessage(FSM peer,Event evt)
 		{
 				Trace("OnMessage %s in State %s\n",evt.toString(),GetState().toString());
 				switch(evt)
 				{
-						case MesSetupReq:
+						case EVT_SETUPREQ:
 								OnMesSetupReq(peer);
 						break;
 						
-						case MesSetupCfm:
+						case EVT_SETUPCFM:
 								OnSetupCfm(peer);
 						break;
 						
-						case MesReleaseReq:
+						case EVT_RELEASEREQ:
 								OnReleaseReq(peer);
 						break;
 						
-						case MesReleaseCfm:
+						case EVT_RELEASECFM:
 								OnReleaseCfm();
 						break;
 						
-						case MesDisplReq:
+						case EVT_DISPLREQ:
 								OnDisplReq();
 						break;
 						
-						case MesSetupInd:
+						case EVT_SETUPIND:
 							OnSetupInd();
 						break ;
 						
-						case MesNull:
+						case EVT_NULL:
 						break ;
 				}
 		}
 		
-		void Connect(Kws peer)
+		void Connect(FSM peer)
 		{
 				SetState(State.SETUPREQ);
-				SendMessage(peer,MSFEvent.MesSetupReq);
+				SendMessage(peer,Event.EVT_SETUPREQ);
 		}
 		
-		void Disconnect(Kws peer)
+		void Disconnect(FSM peer)
 		{
 				switch(GetState())
 				{
 						case IDLE:
-						case DISPLAY:
 						case RELEASEREQ:
 						case SETUPIND:
 						case SETUPREQ:
 						break;
 
+						case DISPLAY:
+							if (PopState() == State.CONNECTED)
+								peer.SendMessage(this, Event.EVT_RELEASEREQ);
+						break ;
+						
 						case CONNECTED:
-								peer.SendMessage(this,MSFEvent.MesReleaseReq);
+								peer.SendMessage(this,Event.EVT_RELEASEREQ);
 						break;
 				}
+		}
+
+		public void OnTimer()
+		{
 		}
 }
