@@ -1,5 +1,4 @@
 
-import java.lang.*;
 
 public class Kws extends Thread
 {
@@ -78,8 +77,11 @@ public class Kws extends Thread
 		
 		State PopState()
 		{
+				State st ;
 				sp--;
-				return GetState();
+				st = GetState();
+				Trace("[%d] Enter State %s\n",sp,st.toString());
+				return st;
 		}
 		
 		void OnMesSetupReq(Kws peer)
@@ -92,8 +94,13 @@ public class Kws extends Thread
 						break;
 						
 						case SETUPREQ:
-								
 						break;
+						
+						case CONNECTED:
+						case SETUPIND:
+						case RELEASEREQ:
+						case DISPLAY:
+						break ;
 				}
 		}
 		
@@ -120,6 +127,11 @@ public class Kws extends Thread
 								SetState(State.IDLE);	
 						  	SendMessage(peer,MSFEvent.MesReleaseCfm);
 						break;
+						
+						case DISPLAY:
+						case RELEASEREQ:
+						case SETUPIND:
+						break ;
 				}
 		}
 		
@@ -130,6 +142,13 @@ public class Kws extends Thread
 						case SETUPREQ:
 								SetState(State.CONNECTED);
 						break;
+						
+						case CONNECTED:
+						case DISPLAY:
+						case RELEASEREQ:
+						case IDLE:
+						case SETUPIND:
+						break ;
 				}
 		}
 		
@@ -140,6 +159,12 @@ public class Kws extends Thread
 						case CONNECTED:
 								SetState(State.IDLE);
 						break;
+						case DISPLAY:
+						case RELEASEREQ:
+						case SETUPREQ:
+						case IDLE:
+						case SETUPIND:
+						break ;
 				}
 		}
 		
@@ -150,7 +175,26 @@ public class Kws extends Thread
 						case CONNECTED:
 								PushState(State.DISPLAY);
 						break;
+						
+						case DISPLAY:
+							switch(PopState())
+							{
+								default:
+								break ;
+							}
+						break ;
+						
+						case IDLE:
+						case RELEASEREQ:
+						case SETUPREQ:
+						case SETUPIND:
+						break;
 				}
+		}
+		
+		void OnSetupInd()
+		{
+			
 		}
 		
 		void OnMessage(Kws peer,MSFEvent evt)
@@ -173,9 +217,17 @@ public class Kws extends Thread
 						case MesReleaseCfm:
 								OnReleaseCfm();
 						break;
+						
 						case MesDisplReq:
 								OnDisplReq();
 						break;
+						
+						case MesSetupInd:
+							OnSetupInd();
+						break ;
+						
+						case MesNull:
+						break ;
 				}
 		}
 		
@@ -190,6 +242,10 @@ public class Kws extends Thread
 				switch(GetState())
 				{
 						case IDLE:
+						case DISPLAY:
+						case RELEASEREQ:
+						case SETUPIND:
+						case SETUPREQ:
 						break;
 
 						case CONNECTED:

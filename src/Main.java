@@ -12,7 +12,8 @@ public class Main
 		b.start();
 		
 		Scanner input = new Scanner(System.in);
-		while(true)
+		boolean ex = false ;
+		while(!ex)
 		{
 			System.out.print("Enter Command: ");
 			String s = input.next();
@@ -27,15 +28,20 @@ public class Main
 				case "disc":
 						b.Disconnect(a);
 				break;
+				
 				case "disp":
 						a.SendMessage(b,Kws.MSFEvent.MesDisplReq);
+				break ;
+				
 				case "exit":
-				return;
+					ex = true;
+				break;
 				
 				default:
 					System.out.printf("unknown command %s\n",s);
 				break;
 			}
 		}
+		input.close();
 	}
 }

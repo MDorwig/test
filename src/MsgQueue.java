@@ -27,9 +27,13 @@ public class MsgQueue
 						}
 						else
 						{
-								MsgQueueItem item = queue.get(0);
+							MsgQueueItem item;
+							synchronized (queue)
+							{
+								item = queue.get(0);
 								queue.remove(item);
-								return item;
+							}
+							return item;
 						}
 				}
 		}
