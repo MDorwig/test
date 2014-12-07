@@ -10,7 +10,8 @@ public class Kws extends Thread
 				MesReleaseReq(0x2181),
 				MesReleaseCfm(0x2184),
 				MesSetupInd(0x2182),
-				MesSetupCfm(0x2183);
+				MesSetupCfm(0x2183),
+				MesDisplReq(0x2160);
 				
 				final int value;
 				MSFEvent(int v) { value = v;}
@@ -20,6 +21,7 @@ public class Kws extends Thread
 				IDLE,
 				SETUPREQ,
 				CONNECTED,
+				DISPLAY,
 				RELEASEREQ,
 				SETUPIND,
 				}
@@ -141,6 +143,16 @@ public class Kws extends Thread
 				}
 		}
 		
+		void OnDisplReq()
+		{
+				switch(GetState())
+				{
+						case CONNECTED:
+								PushState(State.DISPLAY);
+						break;
+				}
+		}
+		
 		void OnMessage(Kws peer,MSFEvent evt)
 		{
 				Trace("OnMessage %s in State %s\n",evt.toString(),GetState().toString());
@@ -160,6 +172,9 @@ public class Kws extends Thread
 						
 						case MesReleaseCfm:
 								OnReleaseCfm();
+						break;
+						case MesDisplReq:
+								OnDisplReq();
 						break;
 				}
 		}

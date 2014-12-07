@@ -27,7 +27,8 @@ public class Main
 				case "disc":
 						b.Disconnect(a);
 				break;
-				
+				case "disp":
+						a.SendMessage(b,Kws.MSFEvent.MesDisplReq);
 				case "exit":
 				return;
 				
