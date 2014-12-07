@@ -218,7 +218,7 @@ public class FSM extends Thread
 						break;
 						
 						case EVT_SETUPIND:
-							OnSetupInd();
+								OnSetupInd();
 						break ;
 						
 						case EVT_NULL:
