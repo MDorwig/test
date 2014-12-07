@@ -2,32 +2,38 @@ import java.util.*;
 
 public class Main
 {
+	static MsgQueue msgqueue;	
 	public static void main(String[] args)
 	{
-		Kws a = new Kws();
-		Kws b = new Kws();
+		Kws a = new Kws("a");
+		Kws b = new Kws("b");
+		
+	 	a.start();
+		b.start();
 		
 		Scanner input = new Scanner(System.in);
 		while(true)
 		{
-			System.out.print("Enter a Event: ");
+			System.out.print("Enter Command: ");
 			String s = input.next();
 			System.out.println();
 			
-			Kws.MSFEvent evt = Kws.MSFEvent.MesNull;
-			
 			switch(s)
 			{
-				case "setupreq": evt = Kws.MSFEvent.MesSetupReq;break;
-				case "releasereq":evt=Kws.MSFEvent.MesReleaseReq;break;
+				case "connect": 
+						a.Connect(b);
+				break;
+				
+				case "disc":
+						b.Disconnect(a);
+				break;
+				
+				case "exit":
+				return;
 				
 				default:
-					System.out.printf("unknown event %s\n",s);
+					System.out.printf("unknown command %s\n",s);
 				break;
-			}
-			if (evt != Kws.MSFEvent.MesNull)
-			{
-  	  	a.OnMessage(b,evt);
 			}
 		}
 	}

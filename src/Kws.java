@@ -1,6 +1,9 @@
 
-public class Kws
+import java.lang.*;
+
+public class Kws extends Thread
 {
+		MsgQueue msgq;
 		public enum MSFEvent {
 				MesNull(0),
 				MesSetupReq(0x2180),
@@ -24,15 +27,40 @@ public class Kws
 		MSFEvent evt;
 		State [] state = { State.IDLE, State.IDLE, State.IDLE};
 		int sp;
-		
-		Kws(){
+		String name;
+		Kws(String n){
+				msgq = new MsgQueue();
+				name = n ;
 				SetState(State.IDLE);
+		}
+
+		@Override
+		public void run()
+		{
+			while(true)
+			{
+				MsgQueueItem item =	msgq.Get();
+				OnMessage(item.orig,item.evt);
+			}
+		}
+		static long lt;
+		void Trace(String fmt,Object... args)
+		{
+				
+				long now ;
+				
+				if (lt == 0)
+						lt = System.currentTimeMillis();
+				now = System.currentTimeMillis() - lt;
+				
+				System.out.printf("%8d %s:",now, name);
+				System.out.printf(fmt,args);
 		}
 		
 		void SetState(State st)
 		{
 				state[sp] = st;
-				System.out.printf("[%d] Enter State %s\n",sp,GetState().toString());
+				Trace("[%d] Enter State %s\n",sp,GetState().toString());
 		}
 		
 		State GetState()
@@ -52,32 +80,34 @@ public class Kws
 				return GetState();
 		}
 		
-		void OnMesSetupReq()
+		void OnMesSetupReq(Kws peer)
 		{
 				switch(GetState())
 				{
 						case IDLE:
-								SetState(State.SETUPREQ);
-								SendMessage(MSFEvent.MesSetupCfm);
+								SetState(State.CONNECTED);
+								SendMessage(peer,MSFEvent.MesSetupCfm);
 						break;
 						
 						case SETUPREQ:
+								
 						break;
-						
 				}
 		}
 		
-		void SendMessage(MSFEvent evt)
+		void SendMessage(Kws peer,MSFEvent evt)
 		{
-				System.out.printf("SendMessage %s\n",evt.toString());
+				MsgQueueItem i = new MsgQueueItem(this,evt);
+				Trace("SendMessage %s to %s\n",evt.toString(),peer.name);
+				peer.msgq.Post(i);
 		}
 		
-		void OnReleaseReq()
+		void OnReleaseReq(Kws peer)
 		{
 				switch(GetState())
 				{
 						case IDLE:
-								System.out.printf("Invalid State %s\n",GetState().toString());
+								Trace("Invalid State %s\n",GetState().toString());
 						break;
 						
 						case SETUPREQ:
@@ -85,22 +115,70 @@ public class Kws
 						break;
 						
 						case CONNECTED:
-						   SendMessage(MSFEvent.MesReleaseCfm);
+								SetState(State.IDLE);	
+						  	SendMessage(peer,MSFEvent.MesReleaseCfm);
 						break;
 				}
 		}
 		
-		void OnMessage(MSFEvent evt)
+		void OnSetupCfm(Kws peer)
 		{
-				System.out.printf("OnMessage %s in State %s\n",evt.toString(),GetState().toString());
+				switch(GetState())
+				{
+						case SETUPREQ:
+								SetState(State.CONNECTED);
+						break;
+				}
+		}
+		
+		void OnReleaseCfm()
+		{
+				switch(GetState())
+				{
+						case CONNECTED:
+								SetState(State.IDLE);
+						break;
+				}
+		}
+		
+		void OnMessage(Kws peer,MSFEvent evt)
+		{
+				Trace("OnMessage %s in State %s\n",evt.toString(),GetState().toString());
 				switch(evt)
 				{
 						case MesSetupReq:
-								OnMesSetupReq();
+								OnMesSetupReq(peer);
+						break;
+						
+						case MesSetupCfm:
+								OnSetupCfm(peer);
 						break;
 						
 						case MesReleaseReq:
-								OnReleaseReq();
+								OnReleaseReq(peer);
+						break;
+						
+						case MesReleaseCfm:
+								OnReleaseCfm();
+						break;
+				}
+		}
+		
+		void Connect(Kws peer)
+		{
+				SetState(State.SETUPREQ);
+				SendMessage(peer,MSFEvent.MesSetupReq);
+		}
+		
+		void Disconnect(Kws peer)
+		{
+				switch(GetState())
+				{
+						case IDLE:
+						break;
+
+						case CONNECTED:
+								peer.SendMessage(this,MSFEvent.MesReleaseReq);
 						break;
 				}
 		}
